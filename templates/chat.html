@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Chat Interface</title>
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+        <link rel="stylesheet" href="../static/style.css">
+    </head>
+    <body>
+        <div class="chatbot-popup">
+            <div class="chat-header">
+                <div class="header-info">                    
+                    <span class="material-symbols-outlined" id="chatbot-logo">ecg_heart</span>
+                    <h2 class="logo-text">Chatbot</h2>
+                </div>
+                <button id="close-chatbot" class="material-symbols-outlined">keyboard_arrow_down</button>
+            </div>
+
+            <div class="chat-body">
+                <div class="message bot-message">
+                    <span class="material-symbols-outlined" id="bot-avatar">ecg_heart</span>
+                    <div class="message-text">Hey there! How can I help you today?</div>
+                </div>
+            </div>
+
+            <div class="chat-footer">
+                <form action="#" class="chat-form">
+                    <textarea placeholder="Message..." class="message-input" required></textarea>
+                    <div class="chat-controls">
+                        <button type="submit" id="send-message" class="material-symbols-outlined">arrow_upward</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const chatForm = document.querySelector(".chat-form");
+                const chatBody = document.querySelector(".chat-body");
+                const messageInput = document.querySelector(".message-input");
+
+                chatForm.addEventListener("submit", function(e) {
+                    e.preventDefault(); // Evita que recargue la página
+
+                    const userMessage = messageInput.value.trim();
+                    if (userMessage === "") return;
+
+                    // Añade el mensaje del usuario al chat
+                    const userMessageElem = document.createElement("div");
+                    userMessageElem.classList.add("message", "user-message");
+                    userMessageElem.innerHTML = `<div class="message-text">${userMessage}</div>`;
+                    chatBody.appendChild(userMessageElem);
+
+                    // Limpia el textarea
+                    messageInput.value = "";
+
+                    // Añade el indicador de 'thinking' del bot
+                    const botThinkingElem = document.createElement("div");
+                    botThinkingElem.classList.add("message", "bot-message", "thinking");
+                    botThinkingElem.innerHTML = `
+                        <span class="material-symbols-outlined" id="bot-avatar">ecg_heart</span>
+                        <div class="message-text">
+                            <div class="thinking-indicator">
+                                <div class="dot"></div>
+                                <div class="dot"></div>
+                                <div class="dot"></div>
+                            </div>
+                        </div>`;
+                    chatBody.appendChild(botThinkingElem);
+
+                    // Desplaza el scroll al final
+                    chatBody.scrollTop = chatBody.scrollHeight;
+
+                    // Enviar el mensaje al servidor con fetch (POST)
+                    fetch("/get", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: "msg=" + encodeURIComponent(userMessage)
+                    })
+                    .then(response => response.text())
+                    .then(botReply => {
+                        // Elimina el indicador de 'thinking'
+                        botThinkingElem.remove();
+
+                        // Añade el mensaje del bot al chat
+                        const botMessageElem = document.createElement("div");
+                        botMessageElem.classList.add("message", "bot-message");
+                        botMessageElem.innerHTML = `
+                            <span class="material-symbols-outlined" id="bot-avatar">ecg_heart</span>
+                            <div class="message-text">${botReply}</div>`;
+                        chatBody.appendChild(botMessageElem);
+
+                        // Desplaza el scroll al final
+                        chatBody.scrollTop = chatBody.scrollHeight;
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                        botThinkingElem.remove();
+                        const botMessageElem = document.createElement("div");
+                        botMessageElem.classList.add("message", "bot-message");
+                        botMessageElem.innerHTML = `
+                            <span class="material-symbols-outlined" id="bot-avatar">ecg_heart</span>
+                            <div class="message-text">Oops! Algo salió mal.</div>`;
+                        chatBody.appendChild(botMessageElem);
+                        chatBody.scrollTop = chatBody.scrollHeight;
+                    });
+                });
+            });
+        </script>
+    </body>
+</html>
